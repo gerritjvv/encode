@@ -2,6 +2,21 @@
 
 Simple fast library that compress, encrypt and encode data, for session storage and other use-cases
 
+## Releases
+
+
+```xml
+<dependency>
+  <groupId>com.github.gerritjvv</groupId>
+  <artifactId>encode-core</artifactId>
+  <version>LATEST</version>
+</dependency>
+```
+
+For the latest version see:  
+
+https://search.maven.org/artifact/com.github.gerritjvv/encode-core/
+
 
 ## Usage
 
@@ -53,3 +68,37 @@ byte[] bts = encoder.encodeObject(rawObj);
 Map decodedObj = encoder.decodeObject(HashMap.class, bts);
 
 ```
+
+## More examples:
+
+See: [Tests](https://github.com/gerritjvv/encode/tree/master/encode-core/src/test/java/encode)
+
+## Performance
+
+See: https://github.com/gerritjvv/encode/tree/master/encode-perf
+
+
+# License
+
+https://www.apache.org/licenses/LICENSE-2.0
+
+# Contributors
+
+Contributions PRs and suggestions are always welcome.
+
+Please ping me directly in the "issues" on "gerritjvv" or send me an email at gerritjvv@gmail.com, this way
+the issues/pull-requests won't just linger if github notifications doens't work.
+
+## Guide on publishing to maven central
+
+https://dzone.com/articles/publish-your-artifacts-to-maven-central
+
+### Release Process:
+
+Follow:
+
+https://www.rainerhahnekamp.com/en/publishing-a-java-library-to-maven-central/
+
+
+Repository staging is deployed to https://oss.sonatype.org
+

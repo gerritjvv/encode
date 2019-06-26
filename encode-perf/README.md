@@ -36,6 +36,8 @@ FSTBench.encodeRaw       thrpt  200  716760.613 ± 17428.384  ops/s   318
 
 NippyBench.decodeRaw     thrpt  200   38264.631 ±   868.061  ops/s
 NippyBench.encodeRaw     thrpt  200  190582.664 ±  4243.056  ops/s   734
+
+
 ```
 
 Data Size:
@@ -49,4 +51,20 @@ FSTBench.encodeFastRaw   thrpt  200  775964.368 ± 21509.038  ops/s
 FSTBench.encodeRaw       thrpt  200  716760.613 ± 17428.384  ops/s
 
 NippyBench.encodeRaw     thrpt  200  190582.664 ±  4243.056  ops/s
+```
+
+
+## Encoder benchmarks:
+
+```bash
+
+Benchmark                        Mode  Cnt       Score      Error  Units
+EncodeBench.decodeLz4AesGCMRaw  thrpt  200  160989.332 ± 2920.574  ops/s
+EncodeBench.encodeLz4AesGCMRaw  thrpt  200  125507.935 ± 2742.862  ops/s
+EncodeBench.decodeAesGCMRaw     thrpt  200  169357.915 ±  3330.562  ops/s
+EncodeBench.decodeLz4Raw        thrpt  200  716337.338 ± 15293.726  ops/s
+EncodeBench.encodeAesGCMRaw     thrpt  200  149302.876 ±  3250.431  ops/s
+EncodeBench.encodeLz4Raw        thrpt  200  424601.815 ±  9148.881  ops/s
+
+
 ```
