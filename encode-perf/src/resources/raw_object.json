@@ -1,0 +1,23 @@
+{
+  "id": "3d42e61c-93c3-4d4a-958f-59b9dd86d915",
+  "ids": [
+    "3d42e61c-93c3-4d4a-958f-59b9dd86d915",
+    "00d6e5bc-a886-4b62-ae5f-43a2f0aeb445",
+    "db699270-c421-47f8-a50d-67f13f2dbe82"
+  ],
+  "plan": {
+    "id": 1,
+    "type": 0,
+    "price": 100.0
+  },
+  "refs": [
+    {
+      "ref-id": 1
+    },
+    {
+      "ref-id": 2
+    }
+  ],
+  "email": "test@example.com",
+  "keys": "https://keys.com/test"
+}
