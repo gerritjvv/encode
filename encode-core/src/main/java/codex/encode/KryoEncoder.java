@@ -82,6 +82,8 @@ public class KryoEncoder implements Encoder{
         UnmodifiableCollectionsSerializer.registerSerializers(kryo);
         SynchronizedCollectionsSerializer.registerSerializers(kryo);
 
+        kryo.register(getMapEntry(), new MapEntrySerde());
+
         kryo.register(Map.Entry.class, new MapEntrySerde());
 
         kryo.register(BigInteger.class, new BigIntSerde());
@@ -90,6 +92,13 @@ public class KryoEncoder implements Encoder{
         return kryo;
     }
 
+    private static final Class getMapEntry() {
+        Map m = new HashMap();
+        m.put("a", "b");
+
+        Set<Map.Entry> entrySet = m.entrySet();
+        return entrySet.iterator().next().getClass();
+    }
 
     public static void setInfoLog() {
         com.esotericsoftware.minlog.Log.set(Log.LEVEL_INFO);
