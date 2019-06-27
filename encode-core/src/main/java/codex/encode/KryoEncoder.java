@@ -3,6 +3,7 @@ package codex.encode;
 import codex.serde.kryo.BigDecSerde;
 import codex.serde.kryo.BigIntSerde;
 import codex.serde.kryo.MapEntrySerde;
+import codex.serde.kryo.MapEntrySetSerde;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.Serializer;
@@ -19,15 +20,93 @@ import java.lang.reflect.InvocationHandler;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
+ *  This encoder is thread safe
  */
 public class KryoEncoder implements Encoder{
 
     public static final KryoEncoder DEFAULT = new KryoEncoder();
 
-    static private final ThreadLocal<Kryo> kryos = ThreadLocal.withInitial(() -> createKryoInstance());
+    /**
+     * Externally registered Serializer(s) for Classes
+     */
+    private static final ConcurrentHashMap<Class, Serializer> serializers = new ConcurrentHashMap<>();
+    /**
+     * Externally registered Classes
+     */
+
+    private static final ConcurrentSkipListSet<Class> regClasses = new ConcurrentSkipListSet<>();
+    /**
+     * Externally registered Registration instances.
+     */
+    private static final ConcurrentSkipListSet<Registration> regs = new ConcurrentSkipListSet<>();
+
+    /**
+     * If any external registered Serializer, Class or Registration this counter is updated
+     * which will trigger any Kryo thread locals to register all external registrations.
+     */
+    private static final AtomicInteger UPDATE_COUNTER = new AtomicInteger(0);
+
+    /**
+     * Kryo is not thread safe, so we need to create ThreadLocals for it.
+     */
+    static private final ThreadLocal<Kryo> KRYOS = new ThreadLocal<Kryo>(){
+
+        /**
+         * Keep track of the lass seen value of the UPDATE_COUNTER
+         */
+        private int localCounter = 0;
+
+        @Override
+        protected Kryo initialValue() {
+            return createKryoInstance();
+        }
+
+        @Override
+        public Kryo get() {
+
+            // Get the Kryo instance
+            Kryo kryo = super.get();
+
+            // check that all external registered classes, serializers and regs have not changed
+            int counter = UPDATE_COUNTER.get();
+
+            while(localCounter != counter) {
+                // exterrnal registrations have changed, re-run register
+                registerSerializers(kryo);
+
+                localCounter = counter;
+                counter = UPDATE_COUNTER.get();
+            }
+
+            return kryo;
+        }
+    };
+
+    /**
+     * Registers all the Serializers and registered classes to the kryo instance.
+     * @param kryo
+     */
+    private static void registerSerializers(Kryo kryo) {
+
+        for(Map.Entry<Class, Serializer> entry : serializers.entrySet()){
+            kryo.register(entry.getKey(), entry.getValue());
+        }
+
+        for(Class cls : regClasses) {
+            kryo.register(cls);
+        }
+
+
+        for(Registration reg : regs) {
+            kryo.register(reg);
+        }
+    }
 
     private static Kryo createKryoInstance(){
 
@@ -82,9 +161,11 @@ public class KryoEncoder implements Encoder{
         UnmodifiableCollectionsSerializer.registerSerializers(kryo);
         SynchronizedCollectionsSerializer.registerSerializers(kryo);
 
-        kryo.register(getMapEntry(), new MapEntrySerde());
+        kryo.register(getMapEntry().getClass(), new MapEntrySerde());
+        kryo.register(getMapEntrySet().getClass(), new MapEntrySetSerde());
 
         kryo.register(Map.Entry.class, new MapEntrySerde());
+
 
         kryo.register(BigInteger.class, new BigIntSerde());
         kryo.register(BigDecimal.class, new BigDecSerde());
@@ -92,12 +173,15 @@ public class KryoEncoder implements Encoder{
         return kryo;
     }
 
-    private static final Class getMapEntry() {
+    private static final Map.Entry getMapEntry() {
+        return getMapEntrySet().iterator().next();
+    }
+
+    private static final Set<Map.Entry> getMapEntrySet() {
         Map m = new HashMap();
         m.put("a", "b");
 
-        Set<Map.Entry> entrySet = m.entrySet();
-        return entrySet.iterator().next().getClass();
+        return  m.entrySet();
     }
 
     public static void setInfoLog() {
@@ -113,7 +197,8 @@ public class KryoEncoder implements Encoder{
      * @param clazz
      */
     public static final void register(Class clazz) {
-        kryos.get().register(clazz);
+        regClasses.add(clazz);
+        UPDATE_COUNTER.incrementAndGet();
     }
 
     /**
@@ -121,7 +206,8 @@ public class KryoEncoder implements Encoder{
      * @param registration
      */
     public static final void register(Registration registration) {
-        kryos.get().register(registration);
+        regs.add(registration);
+        UPDATE_COUNTER.incrementAndGet();
     }
 
     /**
@@ -130,29 +216,30 @@ public class KryoEncoder implements Encoder{
      * @param serializer
      */
     public static final void register(Class clazz, Serializer serializer) {
-        kryos.get().register(clazz, serializer);
+        serializers.put(clazz, serializer);
+        UPDATE_COUNTER.incrementAndGet();
     }
 
 
 
     public final <T> T decodeObject(InputStream stream) {
         Input input = new Input(stream);
-        return (T) kryos.get().readClassAndObject(input);
+        return (T) KRYOS.get().readClassAndObject(input);
     }
 
     public final <T> T decodeObject(byte[] bts) {
         Input input = new Input(bts);
-        return (T) kryos.get().readClassAndObject(input);
+        return (T) KRYOS.get().readClassAndObject(input);
     }
 
     public final <T> T decodeObject(Class<T> clazz, InputStream stream) {
         Input input = new Input(stream);
-        return (T) kryos.get().readClassAndObject(input);
+        return (T) KRYOS.get().readClassAndObject(input);
     }
 
     public final <T> T decodeObject(Class<T> clazz, byte[] bts) {
         Input input = new Input(bts);
-        return (T) kryos.get().readClassAndObject(input);
+        return (T) KRYOS.get().readClassAndObject(input);
     }
 
     public final <T> byte[] encodeObject(T obj) {
@@ -166,7 +253,7 @@ public class KryoEncoder implements Encoder{
     public final <T> void  encodeObject(OutputStream stream, T obj) {
 
         Output output = new Output(stream);
-        kryos.get().writeClassAndObject(output, obj);
+        KRYOS.get().writeClassAndObject(output, obj);
         output.close();
     }
 

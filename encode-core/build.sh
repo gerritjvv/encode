@@ -14,7 +14,8 @@ shift
 case "$CMD" in
 
   release )
-    mvn -X -Prelease deploy
+    mvn release:prepare
+    mvn -Prelease deploy
     ;;
   install )
    mvn clean install

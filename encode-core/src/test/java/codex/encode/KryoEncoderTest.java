@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -22,6 +23,25 @@ public class KryoEncoderTest extends BaseTest{
         Map decodedObj = KryoEncoder.DEFAULT.decodeObject(HashMap.class, bts);
 
         assertEquals(rawObj.get("id"), decodedObj.get("id"));
+    }
+
+    @Test
+    public void testMapEntryEncodeDecode() {
+
+        Map rawObj = buildRawObject();
+
+        byte[] bts = KryoEncoder.DEFAULT.encodeObject(rawObj.entrySet());
+
+
+        Set<Map.Entry> decodedObj = KryoEncoder.DEFAULT.decodeObject(Set.class, bts);
+
+        Map obj2 = new HashMap();
+
+        for(Map.Entry entry : decodedObj) {
+            obj2.put(entry.getKey(), entry.getValue());
+        }
+
+        assertEquals(rawObj.get("id"), obj2.get("id"));
     }
 
     @Test
