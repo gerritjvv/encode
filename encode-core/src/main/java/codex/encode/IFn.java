@@ -1,4 +1,4 @@
-package encode;
+package codex.encode;
 
 /**
  * A function interface that throws exceptions.

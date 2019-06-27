@@ -2,6 +2,11 @@
 
 Simple fast library that compress, encrypt and encode data, for session storage and other use-cases
 
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.gerritjvv/encode-core.svg)](https://search.maven.org/artifact/com.github.gerritjvv/encode-core/)
+
+[![Javadocs](https://javadoc.io/badge/com.github.gerritjvv/encode-core.svg)](https://javadoc.io/doc/com.github.gerritjvv/encode-core)
+
+
 ## Releases
 
 
@@ -29,6 +34,19 @@ Map rawObj = buildRawObject();
 byte[] bts = KryoEncoder.DEFAULT.encodeObject(rawObj);
 
 Map decodedObj = KryoEncoder.DEFAULT.decodeObject(HashMap.class, bts);
+
+```
+
+*Debug Kryo*
+
+Kryo can be tricky, and each concrete class must have a serializer registered.  
+When you get strange errors, set the trace log. 
+
+```java
+KryoEncoder.setTraceLog();
+
+//reset
+KryoEncoder.setInfoLog();
 
 ```
 

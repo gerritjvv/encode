@@ -1,4 +1,4 @@
-package encode;
+package codex.encode;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

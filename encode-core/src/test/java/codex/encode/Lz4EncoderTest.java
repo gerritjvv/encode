@@ -1,14 +1,12 @@
-package encode;
+package codex.encode;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import crypto.Key;
-import encode.CryptoEncoder;
-import encode.Encoder;
-import encode.KryoEncoder;
-import encode.Lz4Encoder;
+import codex.encode.CryptoEncoder;
+import codex.encode.Encoder;
+import codex.encode.KryoEncoder;
+import codex.encode.Lz4Encoder;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 

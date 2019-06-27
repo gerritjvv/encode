@@ -1,11 +1,11 @@
-package encode;
+package codex.encode;
 
 import crypto.AES;
 import crypto.Key;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import static encode.Utils.rethrow;
+import static codex.encode.Utils.rethrow;
 
 /**
  * An encoder that wraps another Encoder and encrypts/decrypts the encoded data.
@@ -45,6 +45,29 @@ public class CryptoEncoder implements Encoder {
     public <T> T decodeObject(Class<T> clazz, byte[] bts) {
         try {
             return encoder.decodeObject(clazz, decryptFn.apply(bts));
+        } catch (Exception e) {
+            return rethrow(e);
+        }
+    }
+
+    @Override
+    public <T> T decodeObject(InputStream stream) {
+
+        try {
+            final byte[] bts = Utils.readAllBytes(stream);
+            return encoder.decodeObject(decryptFn.apply(bts));
+
+        } catch (Exception e) {
+            return rethrow(e);
+        }
+
+
+    }
+
+    @Override
+    public <T> T decodeObject(byte[] bts) {
+        try {
+            return encoder.decodeObject(decryptFn.apply(bts));
         } catch (Exception e) {
             return rethrow(e);
         }

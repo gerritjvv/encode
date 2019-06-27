@@ -1,32 +1,41 @@
-package encode;
+package codex.encode;
 
+import codex.serde.kryo.BigDecSerde;
+import codex.serde.kryo.BigIntSerde;
+import codex.serde.kryo.MapEntrySerde;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.MapSerializer;
+import com.esotericsoftware.minlog.Log;
 import de.javakaffee.kryoserializers.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationHandler;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 
+/**
+ *
+ */
 public class KryoEncoder implements Encoder{
 
     public static final KryoEncoder DEFAULT = new KryoEncoder();
 
-    private static final Kryo KRYO;
+    static private final ThreadLocal<Kryo> kryos = ThreadLocal.withInitial(() -> createKryoInstance());
 
-    static {
+    private static Kryo createKryoInstance(){
+
         /**
          * We need to register the most common types so that kryo can deserialize them
          * any extra classes need to use the static register functions
          */
-
-        KRYO = new  KryoReflectionFactorySupport() {
+        Kryo kryo = new  KryoReflectionFactorySupport() {
 
             @Override
             public Serializer<?> getDefaultSerializer(final Class clazz) {
@@ -49,9 +58,7 @@ public class KryoEncoder implements Encoder{
 
         };
 
-        KRYO.getWarnUnregisteredClasses();
-
-        Kryo kryo = KRYO;
+        kryo.getWarnUnregisteredClasses();
 
         kryo.register(ArrayList.class);
 
@@ -75,15 +82,29 @@ public class KryoEncoder implements Encoder{
         UnmodifiableCollectionsSerializer.registerSerializers(kryo);
         SynchronizedCollectionsSerializer.registerSerializers(kryo);
 
+        kryo.register(Map.Entry.class, new MapEntrySerde());
+
+        kryo.register(BigInteger.class, new BigIntSerde());
+        kryo.register(BigDecimal.class, new BigDecSerde());
+
+        return kryo;
     }
 
+
+    public static void setInfoLog() {
+        com.esotericsoftware.minlog.Log.set(Log.LEVEL_INFO);
+    }
+
+    public static void setTraceLog() {
+        com.esotericsoftware.minlog.Log.set(Log.LEVEL_TRACE);
+    }
 
     /**
      * Register with the global kryo instance
      * @param clazz
      */
     public static final void register(Class clazz) {
-        KRYO.register(clazz);
+        kryos.get().register(clazz);
     }
 
     /**
@@ -91,7 +112,7 @@ public class KryoEncoder implements Encoder{
      * @param registration
      */
     public static final void register(Registration registration) {
-        KRYO.register(registration);
+        kryos.get().register(registration);
     }
 
     /**
@@ -100,18 +121,29 @@ public class KryoEncoder implements Encoder{
      * @param serializer
      */
     public static final void register(Class clazz, Serializer serializer) {
-        KRYO.register(clazz, serializer);
+        kryos.get().register(clazz, serializer);
     }
 
 
+
+    public final <T> T decodeObject(InputStream stream) {
+        Input input = new Input(stream);
+        return (T) kryos.get().readClassAndObject(input);
+    }
+
+    public final <T> T decodeObject(byte[] bts) {
+        Input input = new Input(bts);
+        return (T) kryos.get().readClassAndObject(input);
+    }
+
     public final <T> T decodeObject(Class<T> clazz, InputStream stream) {
         Input input = new Input(stream);
-        return KRYO.readObject(input, clazz);
+        return (T) kryos.get().readClassAndObject(input);
     }
 
     public final <T> T decodeObject(Class<T> clazz, byte[] bts) {
         Input input = new Input(bts);
-        return KRYO.readObject(input, clazz);
+        return (T) kryos.get().readClassAndObject(input);
     }
 
     public final <T> byte[] encodeObject(T obj) {
@@ -125,7 +157,7 @@ public class KryoEncoder implements Encoder{
     public final <T> void  encodeObject(OutputStream stream, T obj) {
 
         Output output = new Output(stream);
-        KRYO.writeObject(output, obj);
+        kryos.get().writeClassAndObject(output, obj);
         output.close();
     }
 

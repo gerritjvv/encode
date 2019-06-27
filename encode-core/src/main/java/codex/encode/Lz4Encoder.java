@@ -1,11 +1,11 @@
-package encode;
+package codex.encode;
 
 import net.jpountz.lz4.*;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import static encode.Utils.rethrow;
+import static codex.encode.Utils.rethrow;
 
 /**
  * An encoder that wraps another Encoder and compress/decompress the encoded data.
@@ -59,6 +59,27 @@ public class Lz4Encoder implements Encoder {
             stream.write(encodeObject(obj));
         } catch (Exception e) {
             rethrow(e);
+        }
+    }
+
+    @Override
+    public <T> T decodeObject(InputStream stream) {
+        try {
+            return decodeObject(Utils.readAllBytes(stream));
+        } catch (Exception e) {
+            return rethrow(e);
+        }
+    }
+
+    @Override
+    public <T> T decodeObject(byte[] bts) {
+        try {
+
+            return encoder.decodeObject(
+                    new LZ4DecompressorWithLength(FACTORY.fastDecompressor()).decompress(bts));
+
+        } catch (Exception e) {
+            return rethrow(e);
         }
     }
 

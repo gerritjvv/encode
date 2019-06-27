@@ -1,4 +1,4 @@
-package encode;
+package codex.encode;
 
 import crypto.Key;
 import org.junit.Test;
