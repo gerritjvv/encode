@@ -1,9 +1,6 @@
 package codex.encode;
 
-import codex.serde.kryo.BigDecSerde;
-import codex.serde.kryo.BigIntSerde;
-import codex.serde.kryo.MapEntrySerde;
-import codex.serde.kryo.MapEntrySetSerde;
+import codex.serde.kryo.*;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.Serializer;
@@ -52,35 +49,36 @@ public class KryoEncoder implements Encoder{
      */
     private static final AtomicInteger UPDATE_COUNTER = new AtomicInteger(0);
 
+
     /**
      * Kryo is not thread safe, so we need to create ThreadLocals for it.
      */
-    static private final ThreadLocal<Kryo> KRYOS = new ThreadLocal<Kryo>(){
-
-        /**
-         * Keep track of the lass seen value of the UPDATE_COUNTER
-         */
-        private int localCounter = 0;
+    static private final ThreadLocal<KryosWrapper> KRYOS = new ThreadLocal<KryosWrapper>(){
 
         @Override
-        protected Kryo initialValue() {
-            return createKryoInstance();
+        protected KryosWrapper initialValue() {
+            Kryo kryo = createKryoInstance();
+            int count = UPDATE_COUNTER.get();
+
+            registerSerializers(kryo);
+
+            return new KryosWrapper(kryo, count);
         }
 
         @Override
-        public Kryo get() {
+        public KryosWrapper get() {
 
             // Get the Kryo instance
-            Kryo kryo = super.get();
+            KryosWrapper kryo = super.get();
 
             // check that all external registered classes, serializers and regs have not changed
             int counter = UPDATE_COUNTER.get();
 
-            while(localCounter != counter) {
+            while(kryo.counter != counter) {
                 // exterrnal registrations have changed, re-run register
-                registerSerializers(kryo);
+                registerSerializers(kryo.kryo);
 
-                localCounter = counter;
+                kryo.counter = counter;
                 counter = UPDATE_COUNTER.get();
             }
 
@@ -170,6 +168,13 @@ public class KryoEncoder implements Encoder{
         kryo.register(BigInteger.class, new BigIntSerde());
         kryo.register(BigDecimal.class, new BigDecSerde());
 
+        kryo.register(byte[].class, new ByteArraySerde());
+        kryo.register(int[].class, new IntArraySerde());
+        kryo.register(long[].class, new LongArraySerde());
+        kryo.register(double[].class, new DoubleArraySerde());
+        kryo.register(float[].class, new FloatArraySerde());
+
+
         return kryo;
     }
 
@@ -224,22 +229,22 @@ public class KryoEncoder implements Encoder{
 
     public final <T> T decodeObject(InputStream stream) {
         Input input = new Input(stream);
-        return (T) KRYOS.get().readClassAndObject(input);
+        return (T) KRYOS.get().kryo.readClassAndObject(input);
     }
 
     public final <T> T decodeObject(byte[] bts) {
         Input input = new Input(bts);
-        return (T) KRYOS.get().readClassAndObject(input);
+        return (T) KRYOS.get().kryo.readClassAndObject(input);
     }
 
     public final <T> T decodeObject(Class<T> clazz, InputStream stream) {
         Input input = new Input(stream);
-        return (T) KRYOS.get().readClassAndObject(input);
+        return (T) KRYOS.get().kryo.readClassAndObject(input);
     }
 
     public final <T> T decodeObject(Class<T> clazz, byte[] bts) {
         Input input = new Input(bts);
-        return (T) KRYOS.get().readClassAndObject(input);
+        return (T) KRYOS.get().kryo.readClassAndObject(input);
     }
 
     public final <T> byte[] encodeObject(T obj) {
@@ -253,9 +258,19 @@ public class KryoEncoder implements Encoder{
     public final <T> void  encodeObject(OutputStream stream, T obj) {
 
         Output output = new Output(stream);
-        KRYOS.get().writeClassAndObject(output, obj);
+        KRYOS.get().kryo.writeClassAndObject(output, obj);
         output.close();
     }
 
+
+    private static class KryosWrapper {
+        final Kryo kryo;
+        int counter;
+
+        public KryosWrapper(Kryo kryo, int counter) {
+            this.kryo = kryo;
+            this.counter = counter;
+        }
+    }
 
 }
