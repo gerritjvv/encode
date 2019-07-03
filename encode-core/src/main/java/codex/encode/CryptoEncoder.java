@@ -20,7 +20,6 @@ public class CryptoEncoder implements Encoder {
 
     private final Encoder encoder;
 
-
     private CryptoEncoder(Encoder encoder, IFn<byte[], byte[]> decryptFn, IFn<byte[], byte[]> encryptFn) {
         this.encoder = encoder;
         this.decryptFn = decryptFn;
@@ -141,13 +140,27 @@ public class CryptoEncoder implements Encoder {
      * @param encoder The encoder to use before encryption is applied
      * @return CryptoEncoder
      */
-    public static CryptoEncoder getCBCHmacInstance(int version, final Key.ExpandedKey key, final Encoder encoder) {
+    public static CryptoEncoder getCBCHmacInstance(final int version, final Key.ExpandedKey key, final Encoder encoder) {
+        return getCBCHmacInstance(version, "SunJCE", key, encoder);
+    }
+
+    /**
+     * Returns an encoder that will encryptCBCHmac(encode(...))
+     * Which hmac is used i.e 256, 512 depends on the key.
+     *
+     * @param version for custom versioning, can be 0 as default
+     * @param provider JCE provider
+     * @param key The key to use for encryption
+     * @param encoder The encoder to use before encryption is applied
+     * @return CryptoEncoder
+     */
+    public static CryptoEncoder getCBCHmacInstance(final int version, final String provider, final Key.ExpandedKey key, final Encoder encoder) {
         final byte v = (byte) version;
 
         return new CryptoEncoder(
                 encoder,
-                (byte[] input) -> AES.decryptCBC(v, key, input),
-                (byte[] input) -> AES.encryptCBC(v, key, input));
+                (byte[] input) -> AES.decryptCBC(v, provider, key, input),
+                (byte[] input) -> AES.encryptCBC(v, provider, key, input));
     }
 
 }

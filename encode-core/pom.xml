@@ -4,7 +4,7 @@
     <groupId>com.github.gerritjvv</groupId>
     <artifactId>encode-core</artifactId>
     <packaging>jar</packaging>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
     <name>encode-core</name>
     <url>https://github.com/gerritjvv/encode/encode-core</url>
 
