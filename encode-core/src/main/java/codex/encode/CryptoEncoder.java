@@ -5,6 +5,7 @@ import crypto.Key;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+
 import static codex.encode.Utils.rethrow;
 
 /**
@@ -94,7 +95,7 @@ public class CryptoEncoder implements Encoder {
     /**
      * Returns an encoder that will encryptGCM(encode(...))
      *
-     * @param key The key to use for encryption
+     * @param key     The key to use for encryption
      * @param encoder The encoder to use before encryption is applied
      * @return CryptoEncoder
      */
@@ -105,25 +106,39 @@ public class CryptoEncoder implements Encoder {
     /**
      * Returns an encoder that will encryptGCM(encode(...))
      *
-     * @param version for custom versioning, can be 0 as default
-     * @param key The key to use for encryption
-     * @param encoder The encoder to use before encryption is applied
+     * @param version  for custom versioning, can be 0 as default
+     * @param key      The key to use for encryption
+     * @param encoder  The encoder to use before encryption is applied
      * @return CryptoEncoder
      */
-    public static CryptoEncoder getGCMInstance(int version, final Key.ExpandedKey key, final Encoder encoder) {
+    public static CryptoEncoder getGCMInstance(final int version, final Key.ExpandedKey key, final Encoder encoder) {
+        return getGCMInstance(version, "SunJCE", key, encoder);
+    }
+
+
+    /**
+     * Returns an encoder that will encryptGCM(encode(...))
+     *
+     * @param version  for custom versioning, can be 0 as default
+     * @param provider JCE provider
+     * @param key      The key to use for encryption
+     * @param encoder  The encoder to use before encryption is applied
+     * @return CryptoEncoder
+     */
+    public static CryptoEncoder getGCMInstance(final int version, final String provider, final Key.ExpandedKey key, final Encoder encoder) {
         final byte v = (byte) version;
 
         return new CryptoEncoder(
                 encoder,
-                (byte[] input) -> AES.decryptGCM(v, key, input),
-                (byte[] input) -> AES.encryptGCM(v, key, input));
+                (byte[] input) -> AES.decryptGCM(v, provider, key, input),
+                (byte[] input) -> AES.encryptGCM(v, provider, key, input));
     }
 
     /**
      * Returns an encoder that will encryptCBCHmac(encode(...))
      * Which hmac is used i.e 256, 512 depends on the key.
      *
-     * @param key The key to use for encryption
+     * @param key     The key to use for encryption
      * @param encoder The encoder to use before encryption is applied
      * @return CryptoEncoder
      */
@@ -136,7 +151,7 @@ public class CryptoEncoder implements Encoder {
      * Which hmac is used i.e 256, 512 depends on the key.
      *
      * @param version for custom versioning, can be 0 as default
-     * @param key The key to use for encryption
+     * @param key     The key to use for encryption
      * @param encoder The encoder to use before encryption is applied
      * @return CryptoEncoder
      */
@@ -148,10 +163,10 @@ public class CryptoEncoder implements Encoder {
      * Returns an encoder that will encryptCBCHmac(encode(...))
      * Which hmac is used i.e 256, 512 depends on the key.
      *
-     * @param version for custom versioning, can be 0 as default
+     * @param version  for custom versioning, can be 0 as default
      * @param provider JCE provider
-     * @param key The key to use for encryption
-     * @param encoder The encoder to use before encryption is applied
+     * @param key      The key to use for encryption
+     * @param encoder  The encoder to use before encryption is applied
      * @return CryptoEncoder
      */
     public static CryptoEncoder getCBCHmacInstance(final int version, final String provider, final Key.ExpandedKey key, final Encoder encoder) {
